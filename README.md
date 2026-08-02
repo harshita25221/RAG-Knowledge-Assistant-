@@ -17,9 +17,11 @@ Welcome to the **Meritech AI Knowledge Assistant**! This is a Retrieval-Augmente
 
 ## 🛠️ Technology Stack
 
+> **Note on LLM Provider**: Initially, we used **Ollama** for running models locally (which is best for privacy-first, local development). However, since Ollama does not support online deployment out of the box in our current setup, we shifted to using **Groq** for the deployed version. 
+
 - **Frontend**: [Streamlit](https://streamlit.io/)
 - **LLM Framework**: [LangChain](https://www.langchain.com/)
-- **Local Model Provider**: [Ollama](https://ollama.ai/) (`qwen2.5:1.5b`)
+- **LLM Provider**: [Groq](https://groq.com/) (Deployed) / [Ollama](https://ollama.ai/) (Local `qwen2.5:1.5b`)
 - **Embeddings**: [FastEmbed](https://qdrant.github.io/fastembed/)
 - **Vector Database**: [ChromaDB](https://www.trychroma.com/)
 - **Database (Chat History)**: SQLite
