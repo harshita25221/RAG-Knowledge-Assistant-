@@ -106,3 +106,10 @@ def render_sidebar():
             st.session_state.current_session_id = ""
             st.rerun()
 
+        st.markdown(
+            '<div style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--border-soft); color: var(--text-muted); font-size: 12px;">'
+            'Created by <b>Harshita Jain</b> & <b>Millee Mittal</b>'
+            '</div>', 
+            unsafe_allow_html=True
+        )
+
