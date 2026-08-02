@@ -15,7 +15,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 import os
 
 
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL = "llama3-70b-8192"
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 #The manual_folder is being used to store the knowledge base permnanently on the local machine. 
 manual_folder = "./meritech_db"
