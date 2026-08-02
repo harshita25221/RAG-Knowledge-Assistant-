@@ -2,7 +2,7 @@
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://cut52pbptmjykaqucftgua.streamlit.app/)
 
-**🌐 Live Demo:** [Click here to try the app](https://cut52pbptmjykaqucftgua.streamlit.app/)
+**🌐 Live Demo:** [Click here to try the app](https://4bhomdgvsctfeoyyko2vx4.streamlit.app/)
 
 Welcome to the **Meritech AI Knowledge Assistant**! This is a Retrieval-Augmented Generation (RAG) based conversational AI application built to act as a friendly customer support assistant for Meritech network products. It seamlessly answers queries based on your technical documents.
 
