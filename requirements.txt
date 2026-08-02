@@ -9,7 +9,7 @@ unstructured
 fastembed
 langchain-text-splitters
 langchain-classic
-langchain-ollama
+langchain-groq
 fastapi
 streamlit
 tabulate

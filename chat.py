@@ -5,7 +5,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, UnstructuredExcelLoader
 from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_ollama import ChatOllama 
+from langchain_groq import ChatGroq
 from langchain_classic.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.output_parsers import StrOutputParser
@@ -15,8 +15,8 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 import os
 
 
-OLLAMA_MODEL  = "qwen2.5:1.5b"
-OLLAMA_URL = "http://localhost:11434"
+GROQ_MODEL = "llama3-8b-8192"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 #The manual_folder is being used to store the knowledge base permnanently on the local machine. 
 manual_folder = "./meritech_db"
 #The chat_log_file is being used to store the chat history in a SQLite database file.
@@ -25,7 +25,7 @@ chat_log_file = "sqlite:///chat_history.db"
 
 class ChatBot:
     def __init__(self, chunk_size=1000, chunk_overlap=200, embedding_model=None, persist_dir="./meritech_db"):
-        self.chat_model = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_URL)
+        self.chat_model = ChatGroq(model_name=GROQ_MODEL, api_key=GROQ_API_KEY)
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.embeddings = embedding_model if embedding_model else FastEmbedEmbeddings()
         self.manual_folder = persist_dir
