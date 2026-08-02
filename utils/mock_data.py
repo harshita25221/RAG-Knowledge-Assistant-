@@ -12,6 +12,9 @@ STATS = [
 DOCUMENTS = [
     {"name": "MeriTech Simga-pa.pdf", "type": "PDF", "date": "Jul 15"},
     {"name": "Sigma meritech product (2).pdf", "type": "PDF", "date": "Jul 15"},
+    {"name": "Sigma-ml.pdf", "type": "PDF", "date": "Aug 02"},
+    {"name": "Centra-SD.pdf", "type": "PDF", "date": "Aug 02"},
+    {"name": "Centra-Experitest.pdf", "type": "PDF", "date": "Aug 02"},
 ]
 
 CHAT_SESSIONS = []
