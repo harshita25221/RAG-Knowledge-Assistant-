@@ -1,0 +1,15 @@
+langchain 
+langchain-community
+langchain-core
+chromadb
+pypdf 
+docx2txt 
+openpyxl
+unstructured 
+fastembed
+langchain-text-splitters
+langchain-classic
+langchain-ollama
+fastapi
+streamlit
+tabulate
