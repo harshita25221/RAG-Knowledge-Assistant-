@@ -13,3 +13,4 @@ langchain-groq
 fastapi
 streamlit
 tabulate
+pysqlite3-binary
