@@ -166,7 +166,7 @@ if __name__ == "__main__":
     
     bot = ChatBot()
     print("ChatBot initialized")
-    file_path =[r"C:\Users\milim\Downloads\MeriTechSoftwarepvt.ltd\Sigma mertich product (2).pdf", r"C:\Users\milim\Downloads\MeriTechSoftwarepvt.ltd\Meritech Sigma-pa.pdf"]
+    file_path =["Sigma-ml.pdf", "Centra-SD.pdf", "Centra-Experitest.pdf"]
     for paths in file_path:
       if not os.path.exists(paths):
         print(f"File path not found {paths}")
