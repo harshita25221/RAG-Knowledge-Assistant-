@@ -1,6 +1,6 @@
 # Meritech AI Knowledge Assistant 🤖
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://cut52pbptmjykaqucftgua.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://x6qiymxvlrukpsw9fkpaq4.streamlit.app/)
 
 **🌐 Live Demo:** [Click here to try the app](https://4bhomdgvsctfeoyyko2vx4.streamlit.app/)
 
