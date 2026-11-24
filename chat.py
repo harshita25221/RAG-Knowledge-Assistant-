@@ -13,6 +13,18 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 import os
+import threading
+import chromadb
+
+_chroma_clients = {}
+_chroma_lock = threading.Lock()
+
+def get_chroma_client(path: str):
+    abs_path = os.path.abspath(path)
+    with _chroma_lock:
+        if abs_path not in _chroma_clients:
+            _chroma_clients[abs_path] = chromadb.PersistentClient(path=abs_path)
+        return _chroma_clients[abs_path]
 
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -29,18 +41,20 @@ def get_groq_api_key():
 
 GROQ_API_KEY = get_groq_api_key()
 #The manual_folder is being used to store the knowledge base permnanently on the local machine. 
-manual_folder = "./meritech_db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DB_DIR = os.path.join(BASE_DIR, "meritech_db")
+manual_folder = DEFAULT_DB_DIR
 #The chat_log_file is being used to store the chat history in a SQLite database file.
 #sqllite is a self-contained serverless database engine. It stores the database as the single file, right inside your project folder.
 chat_log_file = "sqlite:///chat_history.db"
 
 class ChatBot:
-    def __init__(self, chunk_size=1000, chunk_overlap=200, embedding_model=None, persist_dir="./meritech_db"):
+    def __init__(self, chunk_size=1000, chunk_overlap=200, embedding_model=None, persist_dir=None):
         api_key = get_groq_api_key()
         self.chat_model = ChatGroq(model_name=GROQ_MODEL, api_key=api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.embeddings = embedding_model if embedding_model else FastEmbedEmbeddings()
-        self.manual_folder = persist_dir
+        self.manual_folder = os.path.abspath(persist_dir) if persist_dir else DEFAULT_DB_DIR
         self.question_retriever = self._create_rewriter()
         self.chat_bot_personality_rules = self._create_personality_rules()
         self.conversation_chain = self._create_conversation_chain()
@@ -72,7 +86,8 @@ class ChatBot:
     
     def _embed_documents(self, clean_chunks :list):
         """The clean_chunks are embedded and then stored into the vector database "Chroma " for fast retrieval."""
-        Chroma.from_documents(documents=clean_chunks, embedding=self.embeddings, persist_directory=self.manual_folder)
+        client = get_chroma_client(self.manual_folder)
+        Chroma.from_documents(documents=clean_chunks, embedding=self.embeddings, client=client)
 
 
     def _create_rewriter(self) -> ChatPromptTemplate:
@@ -108,32 +123,33 @@ class ChatBot:
         """The function connects the databases, LLM's, prompts into a single conversational pipeline"""
         if not os.path.exists(self.manual_folder):
             return None
-        vector_store = Chroma(
-            persist_directory=self.manual_folder,
-            embedding_function= self.embeddings)
-        #create_history_aware_retriever and create_stuff_documents_chain both server different purposes, first one is used to rewrite the questions and search the database, it cannot answer the user questions, the second is used for read those file and generate a final resposne.
-        #creare_history_aware_retriever (INPUT-> user_question + conversational_history)
-        #create_stuff_documents_chain (INPUT -> 5chunks geenrated above + the question)
-        #Turns the database connection to a retriever which is a search engine, to retrieve top 5 most most mathematically similar chunks.
-        retriever = vector_store.as_retriever(
-            search_type = "similarity",
-            search_kwargs = {"k":5}, #<- Trailing comma, helps you add anything easily. 
-        )
-        #SubChain-A
-        #It is used to reformulate the user follow-up questions, so that the underlying vector store recieves a standalone query instead of a vague question that relies heavily on chat history context.
-        history_aware_retriever = create_history_aware_retriever(self.chat_model,retriever,self.question_retriever)
-        #SubChain-B
-        #Bundles the Ollama model and the final answering instructions. This worker takes the retrieved manual snippets, bundles them with the question, and generates the response.
-        question_answer = create_stuff_documents_chain(self.chat_model, self.chat_bot_personality_rules)
-        #Merges Sub-Chain A and Sub-Chain B together. Data now automatically flows from a question -> history lookup -> database search -> final AI answer.
-        master_chain = create_retrieval_chain(history_aware_retriever, question_answer)
-        #create_retrieval_chain allows to AI to search through your uploaded files to find the answers.It is great at tracking the subject.
-        #RunnabelWithMessageHistory is like a Memory Bank, which remembers you, it allows AI to remember your current conversation which u did eg 3 seconds before.
-        return RunnableWithMessageHistory(master_chain, lambda session_id:SQLChatMessageHistory(session_id=session_id, connection=chat_log_file), 
-                                          input_messages_key="input", 
-                                          history_messages_key="chat_history", 
-                                          output_messages_key="answer"
-                                          )
+        try:
+            client = get_chroma_client(self.manual_folder)
+            vector_store = Chroma(
+                client=client,
+                embedding_function=self.embeddings
+            )
+            #Turns the database connection to a retriever which is a search engine, to retrieve top 5 most mathematically similar chunks.
+            retriever = vector_store.as_retriever(
+                search_type = "similarity",
+                search_kwargs = {"k":5},
+            )
+            #SubChain-A
+            history_aware_retriever = create_history_aware_retriever(self.chat_model, retriever, self.question_retriever)
+            #SubChain-B
+            question_answer = create_stuff_documents_chain(self.chat_model, self.chat_bot_personality_rules)
+            #Merges Sub-Chain A and Sub-Chain B together.
+            master_chain = create_retrieval_chain(history_aware_retriever, question_answer)
+            return RunnableWithMessageHistory(
+                master_chain, 
+                lambda session_id: SQLChatMessageHistory(session_id=session_id, connection=chat_log_file), 
+                input_messages_key="input", 
+                history_messages_key="chat_history", 
+                output_messages_key="answer"
+            )
+        except Exception as e:
+            print(f"Error initializing conversation chain with Chroma: {e}")
+            return None
             
     def _ingest_documents(self, file_paths : list[str])->str:
         master_chunk_list = []
@@ -152,19 +168,26 @@ class ChatBot:
     def _get_retrieved_documents(self, query: str, k=5):
         if not os.path.exists(self.manual_folder):
             return []
-        vector_store = Chroma(
-            persist_directory=self.manual_folder,
-            embedding_function=self.embeddings)
-        retriever = vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": k},
-        )
-        return retriever.invoke(query)
+        try:
+            client = get_chroma_client(self.manual_folder)
+            vector_store = Chroma(
+                client=client,
+                embedding_function=self.embeddings)
+            retriever = vector_store.as_retriever(
+                search_type="similarity",
+                search_kwargs={"k": k},
+            )
+            return retriever.invoke(query)
+        except Exception as e:
+            print(f"Error retrieving documents: {e}")
+            return []
 
     def _ask(self, query:str, session_id:str = "default_session")->str:
         """A public function to call when u want to chat with the chatbot, it requires your query text and optional session id"""
         if not self.conversation_chain:
-            return "The knowledge base is empty"
+            self.conversation_chain = self._create_conversation_chain()
+        if not self.conversation_chain:
+            return "The knowledge base is empty or being initialized."
         
         response = self.conversation_chain.invoke(
             {"input":query},

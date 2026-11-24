@@ -40,10 +40,14 @@ def load_css():
     except AttributeError:
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
 
+@st.cache_resource
+def get_chatbot():
+    return ChatBot()
+
 def init_state():
-    # Initialize your backend ChatBot instance once
+    # Initialize your backend ChatBot instance once safely cached across sessions
     if "chatbot" not in st.session_state:
-        st.session_state.chatbot = ChatBot()
+        st.session_state.chatbot = get_chatbot()
         
     # Track the active session key
     if "current_session_id" not in st.session_state:
