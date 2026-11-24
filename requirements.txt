@@ -14,3 +14,4 @@ fastapi
 streamlit
 tabulate
 pysqlite3-binary
+greenlet

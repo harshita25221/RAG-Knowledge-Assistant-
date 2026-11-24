@@ -16,7 +16,18 @@ import os
 
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+
+def get_groq_api_key():
+    key = os.environ.get("GROQ_API_KEY")
+    if not key:
+        try:
+            import streamlit as st
+            key = st.secrets.get("GROQ_API_KEY")
+        except Exception:
+            pass
+    return key
+
+GROQ_API_KEY = get_groq_api_key()
 #The manual_folder is being used to store the knowledge base permnanently on the local machine. 
 manual_folder = "./meritech_db"
 #The chat_log_file is being used to store the chat history in a SQLite database file.
@@ -25,7 +36,8 @@ chat_log_file = "sqlite:///chat_history.db"
 
 class ChatBot:
     def __init__(self, chunk_size=1000, chunk_overlap=200, embedding_model=None, persist_dir="./meritech_db"):
-        self.chat_model = ChatGroq(model_name=GROQ_MODEL, api_key=GROQ_API_KEY)
+        api_key = get_groq_api_key()
+        self.chat_model = ChatGroq(model_name=GROQ_MODEL, api_key=api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.embeddings = embedding_model if embedding_model else FastEmbedEmbeddings()
         self.manual_folder = persist_dir
